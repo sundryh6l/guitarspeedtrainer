@@ -128,16 +128,18 @@
     return cells;
   }
 
-  function saveExercises() {
-    const json = JSON.stringify(exercises);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'exercises.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+function saveExercises() {
+  const json = JSON.stringify(exercises);
+  const blob = new Blob([json], { type: 'application/json' });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Format timestamp
+  const filename = `exercises_${timestamp}.json`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
   function loadExercises() {
     const input = document.createElement('input');
