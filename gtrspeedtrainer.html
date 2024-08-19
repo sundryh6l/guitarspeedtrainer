@@ -1,0 +1,181 @@
+<html>
+<head>
+  <base href="https://guitarspeed.trainer/" />
+  <title>Guitar Speed Trainer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    .exercise-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+    }
+    .exercise {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin: 10px;
+      padding: 15px;
+      width: 300px;
+    }
+    .tempo-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .tempo-cell {
+      background-color: #ddd;
+      border: 1px solid #999;
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 5px;
+      text-align: center;
+      transition: background-color 0.3s;
+    }
+    .tempo-cell.achieved {
+      background-color: #90EE90;
+    }
+    .add-exercise {
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 20px auto;
+      padding: 10px 20px;
+      display: block;
+    }
+    .save-load {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+    }
+    .save-load button {
+      margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Guitar Speed Trainer</h1>
+  <div id="exercise-container" class="exercise-container"></div>
+  <button id="add-exercise" class="add-exercise">Add Exercise</button>
+  <div class="save-load">
+    <button id="save-exercises">Save Exercises</button>
+    <button id="load-exercises">Load Exercises</button>
+  </div>
+
+<script>
+  const exerciseContainer = document.getElementById('exercise-container');
+  const addExerciseButton = document.getElementById('add-exercise');
+  const saveExercisesButton = document.getElementById('save-exercises');
+  const loadExercisesButton = document.getElementById('load-exercises');
+  let exerciseCount = 0;
+  let exercises = [];
+
+  function createExercise() {
+    if (exerciseCount >= 20) {
+      alert('Maximum number of exercises reached!');
+      return;
+    }
+
+    exerciseCount++;
+    const exercise = {
+      name: `Exercise ${exerciseCount}`,
+      tempos: Array(11).fill(false)
+    };
+    exercises.push(exercise);
+
+    const exerciseDiv = document.createElement('div');
+    exerciseDiv.className = 'exercise';
+    exerciseDiv.innerHTML = `
+      <h3>${exercise.name}</h3>
+      <input type="text" placeholder="Exercise Name" style="width: 100%; margin-bottom: 10px;">
+      <div class="tempo-grid">
+        ${generateTempoCells(exercise.tempos)}
+      </div>
+    `;
+    exerciseContainer.appendChild(exerciseDiv);
+
+    exerciseDiv.querySelectorAll('.tempo-cell').forEach((cell, index) => {
+      cell.addEventListener('click', () => {
+        cell.classList.toggle('achieved');
+        exercise.tempos[index] = !exercise.tempos[index];
+      });
+
+      // Initialize cell state
+      if (exercise.tempos[index]) {
+        cell.classList.add('achieved');
+      }
+    });
+  }
+
+  function generateTempoCells(tempos) {
+    let cells = '';
+    for (let i = 0; i < 11; i++) { // 11 cells for tempos 110 to 210 in steps of 10
+      const tempo = 110 + i * 10;
+      cells += `<div class="tempo-cell">${tempo}</div>`;
+    }
+    return cells;
+  }
+
+  function saveExercises() {
+    const json = JSON.stringify(exercises);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'exercises.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function loadExercises() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = event => {
+        exercises = JSON.parse(event.target.result);
+        exerciseContainer.innerHTML = '';
+        exerciseCount = 0;
+        exercises.forEach(exercise => {
+          createExercise();
+          const exerciseDiv = exerciseContainer.children[exerciseCount - 1];
+          exerciseDiv.querySelectorAll('.tempo-cell').forEach((cell, index) => {
+            if (exercise.tempos[index]) {
+              cell.classList.add('achieved');
+            }
+          });
+        });
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  addExerciseButton.addEventListener('click', createExercise);
+  saveExercisesButton.addEventListener('click', saveExercises);
+  loadExercisesButton.addEventListener('click', loadExercises);
+
+  // Create the first exercise by default
+  createExercise();
+</script>
+
+
+
+
+
+</body>
+</html>
