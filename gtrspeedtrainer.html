@@ -1,69 +1,74 @@
+
 <html>
 <head>
   <base href="https://guitarspeed.trainer/" />
   <title>Guitar Speed Trainer</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
-      margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      color: #333;
-      text-align: center;
-    }
-    .exercise-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-around;
-    }
-    .exercise {
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      margin: 10px;
-      padding: 15px;
-      width: 300px;
-    }
-    .tempo-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 5px;
-      margin-top: 10px;
-    }
-    .tempo-cell {
-      background-color: #ddd;
-      border: 1px solid #999;
-      border-radius: 5px;
-      cursor: pointer;
-      padding: 5px;
-      text-align: center;
-      transition: background-color 0.3s;
-    }
-    .tempo-cell.achieved {
-      background-color: #90EE90;
-    }
-    .add-exercise {
-      background-color: #4CAF50;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
-      font-size: 16px;
-      margin: 20px auto;
-      padding: 10px 20px;
-      display: block;
-    }
-    .save-load {
-      margin: 20px auto;
-      display: flex;
-      justify-content: center;
-    }
-    .save-load button {
-      margin: 0 10px;
-    }
-  </style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+    transform: scale(0.72);
+    transform-origin: top left;
+    width: 133.333%; /* 100% / 0.75 to maintain the layout correctly */
+  }
+  h1 {
+    color: #333;
+    text-align: center;
+  }
+  .exercise-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
+  .exercise {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin: 10px;
+    padding: 15px;
+    width: 300px;
+  }
+  .tempo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+  }
+  .tempo-cell {
+    background-color: #ddd;
+    border: 1px solid #999;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 5px;
+    text-align: center;
+    transition: background-color 0.3s;
+  }
+  .tempo-cell.achieved {
+    background-color: #90EE90;
+  }
+  .add-exercise {
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 20px auto;
+    padding: 10px 20px;
+    display: block;
+  }
+  .save-load {
+    margin: 20px auto;
+    display: flex;
+    justify-content: center;
+  }
+  .save-load button {
+    margin: 0 10px;
+  }
+</style>
+
 </head>
 <body>
   <h1>Guitar Speed Trainer</h1>
@@ -82,24 +87,25 @@
   let exerciseCount = 0;
   let exercises = [];
 
-  function createExercise() {
+  function createExercise(exercise) {
     if (exerciseCount >= 20) {
       alert('Maximum number of exercises reached!');
       return;
     }
 
-    exerciseCount++;
-    const exercise = {
-      name: `Exercise ${exerciseCount}`,
+    exercise = exercise || {
+      name: `Exercise ${exerciseCount + 1}`,
       tempos: Array(11).fill(false)
     };
+    
     exercises.push(exercise);
+    exerciseCount++;
 
     const exerciseDiv = document.createElement('div');
     exerciseDiv.className = 'exercise';
     exerciseDiv.innerHTML = `
       <h3>${exercise.name}</h3>
-      <input type="text" placeholder="Exercise Name" style="width: 100%; margin-bottom: 10px;">
+      <input type="text" placeholder="Exercise Name" value="${exercise.name}" style="width: 100%; margin-bottom: 10px;">
       <div class="tempo-grid">
         ${generateTempoCells(exercise.tempos)}
       </div>
@@ -112,7 +118,6 @@
         exercise.tempos[index] = !exercise.tempos[index];
       });
 
-      // Initialize cell state
       if (exercise.tempos[index]) {
         cell.classList.add('achieved');
       }
@@ -128,18 +133,18 @@
     return cells;
   }
 
-function saveExercises() {
-  const json = JSON.stringify(exercises);
-  const blob = new Blob([json], { type: 'application/json' });
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Format timestamp
-  const filename = `exercises_${timestamp}.json`;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+  function saveExercises() {
+    const json = JSON.stringify(exercises);
+    const blob = new Blob([json], { type: 'application/json' });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Format timestamp
+    const filename = `exercises_${timestamp}.json`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function loadExercises() {
     const input = document.createElement('input');
@@ -151,15 +156,9 @@ function saveExercises() {
       reader.onload = event => {
         exercises = JSON.parse(event.target.result);
         exerciseContainer.innerHTML = '';
-        exerciseCount = 0;
+        exerciseCount = 0; // Reset exercise count
         exercises.forEach(exercise => {
-          createExercise();
-          const exerciseDiv = exerciseContainer.children[exerciseCount - 1];
-          exerciseDiv.querySelectorAll('.tempo-cell').forEach((cell, index) => {
-            if (exercise.tempos[index]) {
-              cell.classList.add('achieved');
-            }
-          });
+          createExercise(exercise);
         });
       };
       reader.readAsText(file);
@@ -167,15 +166,20 @@ function saveExercises() {
     input.click();
   }
 
-  addExerciseButton.addEventListener('click', createExercise);
+  addExerciseButton.addEventListener('click', () => {
+    if (exerciseCount < 20) {
+      createExercise();
+    } else {
+      alert('Maximum number of exercises reached!');
+    }
+  });
+
   saveExercisesButton.addEventListener('click', saveExercises);
   loadExercisesButton.addEventListener('click', loadExercises);
 
   // Create the first exercise by default
   createExercise();
 </script>
-
-
 
 
 
