@@ -1,24 +1,130 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guitar Speed Trainer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        .big-font {
-            font-size: 24px;
-            font-weight: bold;
-        }
-    </style>
+<html><head><base href="/" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guitar Exercise Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
-<body>
-    <h1 class="big-font">Guitar Speed Trainer</h1>
-    <p class="big-font">Hosted at GitHub (sundryh6l@outlook.com)</p>
-    <p class="big-font">This is the link to browse to: <a href="https://guitarspeedtrainer.vercel.app/gtrspeedtrainer.html" target="_blank" rel="noopener noreferrer">Guitar Speed Trainer</a></p>
-</body>
-</html>
+<body class="bg-gray-100 p-8">
+<div id="app" class="max-w-6xl mx-auto">
+  <h1 class="text-3xl font-bold mb-6">Guitar Exercise Tracker</h1>
+  
+  <div class="mb-4">
+    <input v-model="newExercise" @keyup.enter="addExercise" placeholder="Add new exercise" class="border p-2 mr-2">
+    <button @click="addExercise" class="bg-blue-500 text-white px-4 py-2 rounded">Add Exercise</button>
+  </div>
+  
+  <div class="overflow-x-auto">
+    <table class="w-full bg-white shadow-md rounded">
+      <thead>
+        <tr>
+          <th class="p-3 text-left">Exercise</th>
+          <th v-for="tempo in tempos" :key="tempo" class="p-3 text-center">{{ tempo }}</th>
+          <th class="p-3 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(exercise, index) in exercises" :key="index">
+          <td class="p-3">
+            <input v-model="exercise.name" class="border p-1 w-full">
+          </td>
+          <td v-for="tempo in tempos" :key="tempo" @click="toggleProgress(exercise, tempo)" class="p-3 text-center cursor-pointer" :class="{'bg-green-200': exercise.progress.includes(tempo)}">
+            {{ exercise.progress.includes(tempo) ? '✓' : '' }}
+          </td>
+          <td class="p-3 text-center">
+            <button @click="removeExercise(index)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="mt-4">
+    <button @click="saveData" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Save Data</button>
+    <input type="file" @change="loadData" class="hidden" ref="fileInput">
+    <button @click="$refs.fileInput.click()" class="bg-yellow-500 text-white px-4 py-2 rounded">Load Data</button>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed } = Vue
+
+createApp({
+  setup() {
+    const exercises = ref([])
+    const newExercise = ref('')
+    const tempos = computed(() => {
+      const result = []
+      for (let i = 30; i <= 220; i += 10) {
+        result.push(i)
+      }
+      return result
+    })
+
+    function addExercise() {
+      if (newExercise.value.trim()) {
+        exercises.value.push({ name: newExercise.value.trim(), progress: [] })
+        newExercise.value = ''
+      }
+    }
+
+    function removeExercise(index) {
+      exercises.value.splice(index, 1)
+    }
+
+    function toggleProgress(exercise, tempo) {
+      const index = exercise.progress.indexOf(tempo)
+      if (index === -1) {
+        exercise.progress.push(tempo)
+      } else {
+        exercise.progress.splice(index, 1)
+      }
+    }
+
+function saveData() {
+  const data = JSON.stringify(exercises.value);
+  const blob = new Blob([data], { type: 'application/json' });
+
+  const now = new Date();
+  const dateTimeString = now.toISOString().replace(/[:.]/g, '-');
+  const filename = `guitar_exercises_${dateTimeString}.json`;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+    function loadData(event) {
+      const file = event.target.files[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result)
+            exercises.value = data
+          } catch (error) {
+            alert('Invalid file format')
+          }
+        }
+        reader.readAsText(file)
+      }
+    }
+
+    return {
+      exercises,
+      newExercise,
+      tempos,
+      addExercise,
+      removeExercise,
+      toggleProgress,
+      saveData,
+      loadData
+    }
+  }
+}).mount('#app')
+</script>
+</body></html>
