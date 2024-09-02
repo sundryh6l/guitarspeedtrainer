@@ -1,130 +1,175 @@
-<html><head><base href="/" />
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guitar Exercise Tracker</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<html>
+<head>
+  <base href="/" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guitar Exercise Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body class="bg-gray-100 p-8">
-<div id="app" class="max-w-6xl mx-auto">
-  <h1 class="text-3xl font-bold mb-6">Guitar Exercise Tracker</h1>
-  
-  <div class="mb-4">
-    <input v-model="newExercise" @keyup.enter="addExercise" placeholder="Add new exercise" class="border p-2 mr-2">
-    <button @click="addExercise" class="bg-blue-500 text-white px-4 py-2 rounded">Add Exercise</button>
+  <div id="app" class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Guitar Exercise Tracker</h1>
+    
+    <div class="mb-4 flex items-center">
+      <input v-model="newExercise" @keyup.enter="addExercise" placeholder="Add new exercise" class="border p-2 mr-2">
+      <button @click="addExercise" class="bg-blue-500 text-white px-4 py-2 rounded">Add Exercise</button>
+      <button @click="clearCookies" class="ml-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 hover:text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full bg-white shadow-md rounded">
+        <thead>
+          <tr>
+            <th class="p-3 text-left">Exercise</th>
+            <th v-for="tempo in tempos" :key="tempo" class="p-3 text-center">{{ tempo }}</th>
+            <th class="p-3 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(exercise, index) in exercises" :key="index">
+            <td class="p-3">
+              <input v-model="exercise.name" class="border p-1 w-full">
+            </td>
+            <td v-for="tempo in tempos" :key="tempo" @click="toggleProgress(exercise, tempo)" class="p-3 text-center cursor-pointer" :class="{'bg-green-200': exercise.progress.includes(tempo)}">
+              {{ exercise.progress.includes(tempo) ? '✓' : '' }}
+            </td>
+            <td class="p-3 text-center">
+              <button @click="removeExercise(index)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="mt-4">
+      <button @click="saveData" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Save Data</button>
+      <input type="file" @change="loadData" class="hidden" ref="fileInput">
+      <button @click="$refs.fileInput.click()" class="bg-yellow-500 text-white px-4 py-2 rounded">Load Data</button>
+    </div>
   </div>
-  
-  <div class="overflow-x-auto">
-    <table class="w-full bg-white shadow-md rounded">
-      <thead>
-        <tr>
-          <th class="p-3 text-left">Exercise</th>
-          <th v-for="tempo in tempos" :key="tempo" class="p-3 text-center">{{ tempo }}</th>
-          <th class="p-3 text-center">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(exercise, index) in exercises" :key="index">
-          <td class="p-3">
-            <input v-model="exercise.name" class="border p-1 w-full">
-          </td>
-          <td v-for="tempo in tempos" :key="tempo" @click="toggleProgress(exercise, tempo)" class="p-3 text-center cursor-pointer" :class="{'bg-green-200': exercise.progress.includes(tempo)}">
-            {{ exercise.progress.includes(tempo) ? '✓' : '' }}
-          </td>
-          <td class="p-3 text-center">
-            <button @click="removeExercise(index)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  
-  <div class="mt-4">
-    <button @click="saveData" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Save Data</button>
-    <input type="file" @change="loadData" class="hidden" ref="fileInput">
-    <button @click="$refs.fileInput.click()" class="bg-yellow-500 text-white px-4 py-2 rounded">Load Data</button>
-  </div>
-</div>
 
-<script>
-const { createApp, ref, computed } = Vue
+  <script>
+    const { createApp, ref, computed, onMounted } = Vue
 
-createApp({
-  setup() {
-    const exercises = ref([])
-    const newExercise = ref('')
-    const tempos = computed(() => {
-      const result = []
-      for (let i = 30; i <= 220; i += 10) {
-        result.push(i)
-      }
-      return result
-    })
+    createApp({
+      setup() {
+        const exercises = ref([])
+        const newExercise = ref('')
+        const tempos = computed(() => {
+          const result = []
+          for (let i = 30; i <= 220; i += 10) {
+            result.push(i)
+          }
+          return result
+        })
 
-    function addExercise() {
-      if (newExercise.value.trim()) {
-        exercises.value.push({ name: newExercise.value.trim(), progress: [] })
-        newExercise.value = ''
-      }
-    }
-
-    function removeExercise(index) {
-      exercises.value.splice(index, 1)
-    }
-
-    function toggleProgress(exercise, tempo) {
-      const index = exercise.progress.indexOf(tempo)
-      if (index === -1) {
-        exercise.progress.push(tempo)
-      } else {
-        exercise.progress.splice(index, 1)
-      }
-    }
-
-function saveData() {
-  const data = JSON.stringify(exercises.value);
-  const blob = new Blob([data], { type: 'application/json' });
-
-  const now = new Date();
-  const dateTimeString = now.toISOString().replace(/[:.]/g, '-');
-  const filename = `guitar_exercises_${dateTimeString}.json`;
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-
-    function loadData(event) {
-      const file = event.target.files[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          try {
-            const data = JSON.parse(e.target.result)
-            exercises.value = data
-          } catch (error) {
-            alert('Invalid file format')
+        function addExercise() {
+          if (newExercise.value.trim()) {
+            exercises.value.push({ name: newExercise.value.trim(), progress: [] })
+            newExercise.value = ''
+            saveDataToCookies()
           }
         }
-        reader.readAsText(file)
-      }
-    }
 
-    return {
-      exercises,
-      newExercise,
-      tempos,
-      addExercise,
-      removeExercise,
-      toggleProgress,
-      saveData,
-      loadData
-    }
-  }
-}).mount('#app')
-</script>
-</body></html>
+        function removeExercise(index) {
+          exercises.value.splice(index, 1)
+          saveDataToCookies()
+        }
+
+        function toggleProgress(exercise, tempo) {
+          const index = exercise.progress.indexOf(tempo)
+          if (index === -1) {
+            exercise.progress.push(tempo)
+          } else {
+            exercise.progress.splice(index, 1)
+          }
+          saveDataToCookies()
+        }
+
+        function saveData() {
+          const data = JSON.stringify(exercises.value);
+          const blob = new Blob([data], { type: 'application/json' });
+
+          const now = new Date();
+          const dateTimeString = now.toISOString().replace(/[:.]/g, '-');
+          const filename = `guitar_exercises_${dateTimeString}.json`;
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+
+        function loadData(event) {
+          const file = event.target.files[0]
+          if (file) {
+            const reader = new FileReader()
+            reader.onload = (e) => {
+              try {
+                const data = JSON.parse(e.target.result)
+                exercises.value = data
+                saveDataToCookies()
+              } catch (error) {
+                alert('Invalid file format')
+              }
+            }
+            reader.readAsText(file)
+          }
+        }
+
+        function saveDataToCookies() {
+          const data = JSON.stringify(exercises.value);
+          const now = new Date();
+          now.setTime(now.getTime() + (2 * 24 * 60 * 60 * 1000)); // 2 days
+          document.cookie = `exercises=${encodeURIComponent(data)}; expires=${now.toUTCString()}; path=/`;
+        }
+
+        function loadDataFromCookies() {
+          const name = "exercises=";
+          const decodedCookie = decodeURIComponent(document.cookie);
+          const ca = decodedCookie.split(';');
+          for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') {
+              c = c.substring(1);
+            }
+            if (c.indexOf(name) === 0) {
+              const data = c.substring(name.length, c.length);
+              exercises.value = JSON.parse(data);
+              break;
+            }
+          }
+        }
+
+        function clearCookies() {
+          document.cookie = "exercises=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          exercises.value = [];
+        }
+
+        onMounted(() => {
+          loadDataFromCookies();
+        });
+
+        return {
+          exercises,
+          newExercise,
+          tempos,
+          addExercise,
+          removeExercise,
+          toggleProgress,
+          saveData,
+          loadData,
+          clearCookies
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
